@@ -63,8 +63,9 @@ class DeepDNA:
             self.outputs[i] = calculate_total_size(self.outputs[i])
 
     def generate(self):
+        flow = self.flow
+
         usedInputs = []
-        flow = []
         vars = []
         outs = []
         outputs = []
@@ -106,7 +107,15 @@ class DeepDNA:
                     ops.append(op)
 
             return ops
+        def calcUsedInputs():
+            nonlocal usedInputs
+            usedInputs = []
+            for output in outputs:
+                for depend in output.dependsOn:
+                    if depend not in usedInputs:
+                        usedInputs.append(depend)
 
+        calcUsedInputs()
 
         while len(usedInputs) < len(self.inputs) or len(outputs) < len(self.outputs):
             ops = availableOperations()
@@ -118,15 +127,10 @@ class DeepDNA:
                 if seq.output not in outputs:
                     outputs.append(seq.output)
 
-                usedInputs = []
-                for output in outputs:
-                    for depend in output.dependsOn:
-                        if depend not in usedInputs:
-                            usedInputs.append(depend)
+                calcUsedInputs()
 
             flow.append(seq)
 
-        self.flow = flow
         return flow
 
     def printFlow(self):
@@ -143,7 +147,7 @@ class DeepDNA:
             print(varStr(seq.output), seq.operation.name, inputs)
 
     def optimizeFlow(self):
-        flow = self.flow
+        flow = []
 
         outs = []
         dependsOn = []
@@ -160,6 +164,8 @@ class DeepDNA:
                 if seq.output.num in dependsOn:
                     flow.insert(0, seq)
 
+        self.flow = flow
+
     def mergeWith(self, otherFlow):
         flow = []
 
@@ -172,21 +178,25 @@ class DeepDNA:
                     flowNumVars = seq.output.num
         flowNumVars += 1
 
+        vars = []
         for seq in otherFlow:
             if seq.operation.name != 'ASSIGNOUT':
-                seq.output.num += len(self.outputs)
+                seq = copy.deepcopy(seq)
 
-                for i in range(0, len(seq.output.dependsOn)):
-                    seq.output.dependsOn[i] += flowNumVars
+                if seq.output not in vars:
+                    vars.append(seq.output)
 
-                for i in range(0, len(seq.inputs)):
-                    seq.inputs[i].num += flowNumVars
-                    for j in range(0, len(seq.inputs[i].dependsOn)):
-                        seq.inputs[i].dependsOn[j] += flowNumVars
+                for input in seq.inputs:
+                    if input not in vars:
+                        vars.append(input)
 
                 flow.append(seq)
 
-        self.flow = flow
+        for var in vars:
+            var.num += flowNumVars
+            for j in range(0, len(var.dependsOn)):
+                var.dependsOn[j] += flowNumVars
+
         self.generate()
         self.optimizeFlow()
 
@@ -290,4 +300,4 @@ dna2.printFlow()
 
 dna.mergeWith(dna2.flow)
 print("\nDNA child:")
-dna2.printFlow()
+dna.printFlow()
