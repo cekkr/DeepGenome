@@ -170,20 +170,20 @@ class DeepDNA:
 
             if seq.operation.name != 'ASSIGNOUT':
                 sub = seq.output.num
-                seq.output.num = len(substitute)
+                seq.output.num = len(substitute) + len(self.inputs)
                 substitute.append(sub)
 
                 for j in range(0, len(seq.output.dependsOn)):
                     if seq.output.dependsOn[j] in substitute:
-                        seq.output.dependsOn[j] = substitute.index(seq.output.dependsOn[j])
+                        seq.output.dependsOn[j] = substitute.index(seq.output.dependsOn[j]) + len(self.inputs)
 
             for input in seq.inputs:
                 if input.num in substitute:
-                    input.num = substitute.index(input.num)
+                    input.num = substitute.index(input.num) + len(self.inputs)
 
                 for j in range(0, len(input.dependsOn)):
                     if input.dependsOn[j] in substitute:
-                        input.dependsOn[j] = substitute.index(input.dependsOn[j])
+                        input.dependsOn[j] = substitute.index(input.dependsOn[j]) + len(self.inputs)
 
         self.flow = flow
 
