@@ -1,4 +1,5 @@
 import random
+import copy
 
 def calculate_total_size(shape):
     total_size = 1
@@ -10,6 +11,8 @@ class DeepDNA:
     def __init__(self):
         self.inputs = []
         self.outputs = []
+
+        self.flow = []
 
         self.operations = []
 
@@ -83,6 +86,9 @@ class DeepDNA:
             i += 1
             outs.append(var)
 
+        for seq in flow:
+            vars.append(seq.output)
+
         def availableOperations():
             ops = []
             for op in self.operations:
@@ -98,13 +104,7 @@ class DeepDNA:
                             sameSize.append(var.size)
                 if op.name == 'ASSIGNOUT':
                     ops.append(op)
-                    continue
-                    # disabled
-                    for out in outs:
-                        for var in vars:
-                            if out.size == var.size:
-                                ops.append(op)
-                                continue
+
             return ops
 
 
@@ -143,7 +143,7 @@ class DeepDNA:
             print(varStr(seq.output), seq.operation.name, inputs)
 
     def optimizeFlow(self):
-        flow = []
+        flow = self.flow
 
         outs = []
         dependsOn = []
@@ -160,7 +160,35 @@ class DeepDNA:
                 if seq.output.num in dependsOn:
                     flow.insert(0, seq)
 
+    def mergeWith(self, otherFlow):
+        flow = []
+
+        flowNumVars = len(self.inputs)-1
+        for seq in self.flow:
+            if seq.operation.name != 'ASSIGNOUT':
+                flow.append(seq)
+
+                if seq.output.num > flowNumVars:
+                    flowNumVars = seq.output.num
+        flowNumVars += 1
+
+        for seq in otherFlow:
+            if seq.operation.name != 'ASSIGNOUT':
+                seq.output.num += len(self.outputs)
+
+                for i in range(0, len(seq.output.dependsOn)):
+                    seq.output.dependsOn[i] += flowNumVars
+
+                for i in range(0, len(seq.inputs)):
+                    seq.inputs[i].num += flowNumVars
+                    for j in range(0, len(seq.inputs[i].dependsOn)):
+                        seq.inputs[i].dependsOn[j] += flowNumVars
+
+                flow.append(seq)
+
         self.flow = flow
+        self.generate()
+        self.optimizeFlow()
 
 class DeepDNA_Var:
     def __init__(self):
@@ -248,6 +276,18 @@ dna.outputs.append((4, 2)) # speak (the first number indicate the frequency, and
 
 dna.normalize()
 
+dna2 = copy.deepcopy(dna)
+
 dna.generate()
 dna.optimizeFlow()
+print("DNA 1:")
 dna.printFlow()
+
+dna2.generate()
+dna2.optimizeFlow()
+print("\nDNA 2:")
+dna2.printFlow()
+
+dna.mergeWith(dna2.flow)
+print("\nDNA child:")
+dna2.printFlow()
