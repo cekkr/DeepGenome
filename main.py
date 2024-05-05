@@ -164,6 +164,27 @@ class DeepDNA:
                 if seq.output.num in dependsOn:
                     flow.insert(0, seq)
 
+        substitute = []
+        for i in range(0, len(flow)):
+            seq = flow[i]
+
+            if seq.operation.name != 'ASSIGNOUT':
+                sub = seq.output.num
+                seq.output.num = len(substitute)
+                substitute.append(sub)
+
+                for j in range(0, len(seq.output.dependsOn)):
+                    if seq.output.dependsOn[j] in substitute:
+                        seq.output.dependsOn[j] = substitute.index(seq.output.dependsOn[j])
+
+            for input in seq.inputs:
+                if input.num in substitute:
+                    input.num = substitute.index(input.num)
+
+                for j in range(0, len(input.dependsOn)):
+                    if input.dependsOn[j] in substitute:
+                        input.dependsOn[j] = substitute.index(input.dependsOn[j])
+
         self.flow = flow
 
     def mergeWith(self, otherFlow):
@@ -193,9 +214,11 @@ class DeepDNA:
                 flow.append(seq)
 
         for var in vars:
-            var.num += flowNumVars
+            if var.num >= len(self.inputs):
+                var.num += flowNumVars
             for j in range(0, len(var.dependsOn)):
-                var.dependsOn[j] += flowNumVars
+                if var.dependsOn[j] >= len(self.inputs):
+                    var.dependsOn[j] += flowNumVars
 
         self.generate()
         self.optimizeFlow()
