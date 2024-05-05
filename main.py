@@ -207,7 +207,7 @@ class DeepDNA_Sequence:
             if self.operation.name == 'LINEAR':
                 input = random.choices(vars)[0]
                 self.inputs.append(input)
-                while self.output.size > 0:
+                while self.output.size <= 0:
                     self.output.size = input.size + random.randint(-10, 10)
                 self.output.dependsOn.extend(input.dependsOn)
 
