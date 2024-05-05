@@ -108,7 +108,7 @@ class DeepDNA:
             return ops
 
 
-        while len(usedInputs) < len(self.inputs):
+        while len(usedInputs) < len(self.inputs) and len(outputs) < len(self.outputs):
             ops = availableOperations()
             seq = DeepDNA_Sequence(self)
             seq.operation = random.choices(ops)[0]
@@ -142,6 +142,25 @@ class DeepDNA:
                 inputs += varStr(input)
             print(varStr(seq.output), seq.operation.name, inputs)
 
+    def optimizeFlow(self):
+        flow = []
+
+        outs = []
+        dependsOn = []
+        for i in range(0, len(self.flow)):
+            ii = len(self.flow) - i - 1
+            seq = self.flow[ii]
+
+            if seq.operation.name == 'ASSIGNOUT':
+                if seq.output.num not in outs:
+                    dependsOn.extend(seq.output.dependsOn)
+                    outs.append(seq.output.num)
+                    flow.insert(0, seq)
+            else:
+                if seq.output.num in dependsOn:
+                    flow.insert(0, seq)
+
+        self.flow = flow
 
 class DeepDNA_Var:
     def __init__(self):
@@ -183,11 +202,13 @@ class DeepDNA_Sequence:
         else:
             self.output = DeepDNA_Var()
             self.output.num = len(vars)
+            vars.append(self.output)
 
             if self.operation.name == 'LINEAR':
                 input = random.choices(vars)[0]
                 self.inputs.append(input)
-                self.output.size = input.size + random.randint(-10, 10)
+                while self.output.size > 0:
+                    self.output.size = input.size + random.randint(-10, 10)
                 self.output.dependsOn.extend(input.dependsOn)
 
             if self.operation.name == 'ADD':
@@ -203,6 +224,7 @@ class DeepDNA_Sequence:
 
         for input in self.inputs:
             self.output.dependsOn.extend(input.dependsOn)
+            self.output.dependsOn.append(input.num)
 
 
 ###
@@ -226,5 +248,6 @@ dna.outputs.append((4, 2)) # speak (the first number indicate the frequency, and
 
 dna.normalize()
 
-randFlow = dna.generate()
+dna.generate()
+dna.optimizeFlow()
 dna.printFlow()
