@@ -108,7 +108,7 @@ class DeepDNA:
             return ops
 
 
-        while len(usedInputs) < len(self.inputs) and len(outputs) < len(self.outputs):
+        while len(usedInputs) < len(self.inputs) or len(outputs) < len(self.outputs):
             ops = availableOperations()
             seq = DeepDNA_Sequence(self)
             seq.operation = random.choices(ops)[0]
