@@ -186,7 +186,14 @@ class Calculator:
                     case 'Out':
                         self.outs.append(next)
 
-            case 2:                  
+            case 2:
                 if next is 'DEFAULT':
                     tensor = self.curOp[1]
                     self.defaults.append(tensor)
+            
+            case 4:
+                type = self.curOp[pos-2]
+
+                if type is 'Tensor':
+                    if next in self.defaults:
+                        self.defaultsCalled.append(next)
