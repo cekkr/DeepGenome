@@ -55,6 +55,11 @@ class Calculator:
         self.vars = {} # vars info
 
         self.tensors = [i for i in range(0, len(self.inputs))]
+        for tensor in self.tensors:
+            var = VarInfo('Tensor', tensor)
+            var.dependsOn.append(tensor)
+            self.vars['Tensor:'+str(tensor)] = var
+
         self.defaults = []
         self.defaultsCalled = []
 
@@ -199,7 +204,7 @@ class Calculator:
                         self.outs.append(next)
 
                 var = VarInfo(type, next)
-                self.vars[type+':'+next] = var
+                self.vars[type+':'+str(next)] = var
                 self.curOpOutVar = var
 
             case 2:
@@ -210,13 +215,15 @@ class Calculator:
             case 4:
                 type = self.curOp[pos-2]
 
-                self.curOpOutVar.dependsOn.append(type+':'+next)
+                var = self.vars[type+':'+str(next)]
+                self.curOpOutVar.dependsOn.extend(var.dependsOn)
 
                 if type == 'Tensor':
                     if next in self.defaults:
                         self.defaultsCalled.append(next)
 
                 fun = self.curOp[2]
+
                 args = self.funcsArgs[fun]
                 return pos == ((len(args)-1)*2)+4
 
