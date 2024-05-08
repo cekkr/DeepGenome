@@ -52,6 +52,7 @@ class Calculator:
 
         self.tensors = []
         self.defaults = []
+        self.defaultsCalled = []
 
         self.numbers = []
 
@@ -88,7 +89,8 @@ class Calculator:
                         options.append(len(self.tensors))
 
                         for default in self.defaults:
-                            options.append(default)
+                            if default in self.defaultsCalled:
+                                options.append(default)
                     case 'Out':
                         for out in self.outs:
                             if self.forecast(op, out):
@@ -161,3 +163,30 @@ class Calculator:
         opts = self.getOptions(op)
         return len(opts) > 0
 
+    def select(self, next):
+        self.curOp.append(next)
+
+        pos = len(self.curOp)
+        status = pos
+        if status > 2:
+            status = ((status - 3) % 2) + 3
+
+        match status:
+            case 1:
+                type = self.curOp[0]
+                match type:
+                    case 'Tensor':
+                        if next in self.defaults:
+                            self.defaults.remove(next)
+                            self.defaultsCalled.remove(next)
+                        else:
+                            self.tensors.append(next)
+                    case 'Number':
+                        self.numbers.append(next)
+                    case 'Out':
+                        self.outs.append(next)
+
+            case 2:                  
+                if next is 'DEFAULT':
+                    tensor = self.curOp[1]
+                    self.defaults.append(tensor)
