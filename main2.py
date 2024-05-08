@@ -66,7 +66,7 @@ class Calculator:
         self.numbers = []
 
         self.outs = [i for i in range(0, len(self.outputs))]
-        self.assignedOuts = []
+        self.assignedOuts = {}
 
     def getOptions(self, op=None):
         if op is None:
@@ -151,7 +151,7 @@ class Calculator:
 
                 match type:
                     case 'NULL':
-                        fun = op[3]
+                        fun = op[2]
                         args = self.funcsArgs[fun]
                         num = (len(op) - 3) // 2
                         arg = args[num]
@@ -202,7 +202,8 @@ class Calculator:
                     case 'Number':
                         self.numbers.append(next)
                     case 'Out':
-                        self.outs.append(next)
+                        if next not in self.outs:
+                            self.outs.append(next)
 
                 var = VarInfo(type, next)
                 self.vars[type+':'+str(next)] = var
@@ -214,10 +215,12 @@ class Calculator:
                     self.defaults.append(tensor)
 
             case 4:
-                type = self.curOp[pos-2]
+                type = self.curOp[pos-1]
 
-                var = self.vars[type+':'+str(next)]
-                self.curOpOutVar.dependsOn.extend(var.dependsOn)
+                var = None
+                if type == 'Tensor':
+                    var = self.vars[type+':'+str(next)]
+                    self.curOpOutVar.dependsOn.extend(var.dependsOn)
 
                 if type == 'Tensor':
                     if next in self.defaults:
@@ -227,12 +230,25 @@ class Calculator:
 
                 if fun == 'ASSIGNOUT':
                     self.curOpOutVar.dependsOn = var.dependsOn
-                    self.assignedOuts.append(self.curOpOutVar)
+                    self.assignedOuts[self.curOpOutVar.number] = self.curOpOutVar
 
                 args = self.funcsArgs[fun]
                 return pos == ((len(args)-1)*2)+4
 
         return False
+
+    def isComplete(self):
+        if len(self.outs) < len(self.outputs):
+            return False;
+
+        usedInputs = []
+
+        for var in self.assignedOuts.values():
+            for dep in var.dependsOn:
+                if dep not in usedInputs:
+                    usedInputs.append(dep)
+
+        return len(usedInputs) == len(self.inputs)
 
     def randomUpTo(self, upTo):
         self.reset()
@@ -254,6 +270,24 @@ class Calculator:
                 n += 1
 
         print(self.ops)
+
+    def randomUntilComplete(self):
+        self.reset()
+
+        while True:
+            opts = self.getOptions()
+            sel = random.choice(opts)
+
+            if self.select(sel):
+                self.ops.append(self.curOp)
+                self.curOp = []
+
+                if self.isComplete():
+                    return self.ops
+
+    def print(self):
+        for op in self.ops:
+            print(op)
 
 class VarInfo:
     def __init__(self, type, number):
@@ -281,4 +315,5 @@ calc.outputs.append((1,)) # bite
 calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, and the second the amplitude, up to 4 frequencies at the same time)
 
 # Test random generation
-calc.randomUpTo(10)
+calc.randomUntilComplete()
+calc.print()
