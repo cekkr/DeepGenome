@@ -1,5 +1,7 @@
 # This is a new attempt to define an guideline for the development of the DeepGenome
 # Documentation at https://docs.google.com/document/d/1low-DnPADNhektL5gF9kQEo-727Tjeqt21KLjI1mFcM
+import random
+
 
 # The Calculator have to execute the DeepDNA and calculate possible options
 class Calculator:
@@ -50,7 +52,7 @@ class Calculator:
         self.ops = []
         self.curOp = []
 
-        self.tensors = []
+        self.tensors = [i for i in range(0, len(self.inputs))]
         self.defaults = []
         self.defaultsCalled = []
 
@@ -116,7 +118,7 @@ class Calculator:
                                 options.append(fun)
 
             case 3:
-                fun = op[3]
+                fun = op[2]
                 args = self.funcsArgs[fun]
                 num = (len(op)-3) // 2
                 arg = args[num]
@@ -126,13 +128,13 @@ class Calculator:
                 if self.forecast(op, type):
                     options.append(type)
 
-                if type is 'Number':
+                if type == 'Number':
                     options.append('Tensor')
 
                 if len(arg) == 2:
                     options.append('NULL')
 
-                if fun is 'SET':
+                if fun == 'SET':
                     options.append('INTEGER')
 
             case 4:
@@ -164,9 +166,10 @@ class Calculator:
         return len(opts) > 0
 
     def select(self, next):
+        pos = len(self.curOp)
+
         self.curOp.append(next)
 
-        pos = len(self.curOp)
         status = pos
         if status > 2:
             status = ((status - 3) % 2) + 3
@@ -187,16 +190,43 @@ class Calculator:
                         self.outs.append(next)
 
             case 2:
-                if next is 'DEFAULT':
+                if next == 'DEFAULT':
                     tensor = self.curOp[1]
                     self.defaults.append(tensor)
 
             case 4:
                 type = self.curOp[pos-2]
 
-                if type is 'Tensor':
+                if type == 'Tensor':
                     if next in self.defaults:
                         self.defaultsCalled.append(next)
+
+                fun = self.curOp[2]
+                args = self.funcsArgs[fun]
+                return pos == ((len(args)-1)*2)+4
+
+        return False
+
+    def randomUpTo(self, upTo):
+        self.reset()
+
+        n = 0
+        while n < upTo:
+            opts = self.getOptions()
+
+            if len(opts) == 0:
+                print(self.curOp)
+                print(self.ops)
+                print("debug")
+
+            sel = random.choice(opts)
+
+            if self.select(sel):
+                self.ops.append(self.curOp)
+                self.curOp = []
+                n += 1
+
+        print(self.ops)
 
 ###
 ### Instance agent
@@ -216,3 +246,6 @@ calc.outputs.append((1,)) # blow
 calc.outputs.append((1,)) # kiss
 calc.outputs.append((1,)) # bite
 calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, and the second the amplitude, up to 4 frequencies at the same time)
+
+# Test random generation
+calc.randomUpTo(10)
