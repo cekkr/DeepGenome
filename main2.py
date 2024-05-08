@@ -66,6 +66,7 @@ class Calculator:
         self.numbers = []
 
         self.outs = [i for i in range(0, len(self.outputs))]
+        self.assignedOuts = []
 
     def getOptions(self, op=None):
         if op is None:
@@ -223,6 +224,10 @@ class Calculator:
                         self.defaultsCalled.append(next)
 
                 fun = self.curOp[2]
+
+                if fun == 'ASSIGNOUT':
+                    self.curOpOutVar.dependsOn = var.dependsOn
+                    self.assignedOuts.append(self.curOpOutVar)
 
                 args = self.funcsArgs[fun]
                 return pos == ((len(args)-1)*2)+4
