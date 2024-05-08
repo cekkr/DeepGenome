@@ -256,12 +256,6 @@ class Calculator:
         n = 0
         while n < upTo:
             opts = self.getOptions()
-
-            if len(opts) == 0:
-                print(self.curOp)
-                print(self.ops)
-                print("debug")
-
             sel = random.choice(opts)
 
             if self.select(sel):
