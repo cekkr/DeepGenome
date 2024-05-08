@@ -238,7 +238,7 @@ class Calculator:
         return False
 
     def isComplete(self):
-        if len(self.outs) < len(self.outputs):
+        if len(self.assignedOuts.values()) < len(self.outputs):
             return False;
 
         usedInputs = []
@@ -308,7 +308,7 @@ class Calculator:
                 if op[1] not in outs:
                     outs.append(op[1])
                     addDepends(op[3]+':'+str(op[4]))
-                    ops.append(op)
+                    ops.insert(0, op)
             else:
                 out = op[0]+':'+str(op[1])
                 if out in dependsOn:
@@ -317,7 +317,7 @@ class Calculator:
                         if op[i] not in ['NULL', 'INTEGER']: # just to be clear
                             addDepends(op[i]+':'+str(op[i+1]))
                         i += 2
-                    ops.append(op)
+                    ops.insert(0, op)
 
         # Scale Tensors
         tensors = []
