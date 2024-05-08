@@ -138,6 +138,7 @@ class Calculator:
                     options.append('INTEGER')
 
             case 4:
+                funType = op[0]
                 type = op[len(op)-1]
 
                 match type:
@@ -153,9 +154,15 @@ class Calculator:
                     case 'Number':
                         for num in self.numbers:
                             options.append(num)
+
+                        if funType == 'Number':
+                            options.pop()
                     case 'Tensor':
                         for tensor in self.tensors:
                             options.append(tensor)
+
+                        if funType == 'Tensor':
+                            options.pop()
 
         return options
 
