@@ -3,11 +3,24 @@
 # The Calculator have to execute the DeepDNA and calculate possible options
 class Calculator:
     def __init__(self):
+        self.inputs = []
+        self.outputs = []
         self.reset()
 
     def reset(self):
         self.ops = []
-        self.curOps = []
+        self.curOp = []
+
+        self.tensors = []
+        self.defaults = []
+
+        self.numbers = []
+
+        self.outs = [i for i in range(0, len(self.outputs))]
+
+    def getOptions(self, op=None):
+        if op is None:
+            op = self.curOp
 
         # Operation status:
         # 0. Output type
@@ -15,6 +28,38 @@ class Calculator:
         # 2. Operation
         # 3. Input type
         # 4. Input number
-        self.curOpStatus = 0
-        
-        self.curOpArgs = 0
+        status = len(op)
+        if status > 2:
+            status = ((status - 3) % 2) + 3
+
+        options = []
+
+        match status:
+            case 0:
+                options.append('Tensor')
+                options.append('Number')
+                if self.forecast(op, 'Out'):
+                    options.append('Out')
+
+            case 1:
+                type = op[len(op)-1]
+
+                match type:
+                    case 'Tensor':
+                        options.append(len(self.tensors))
+
+                        for default in self.defaults:
+                            options.append(default)
+                    case 'Out':
+                        for out in self.outs:
+                            if self.forecast(op, out):
+                                options.append(out)
+                    case 'Number':
+                        options.append(len(self.numbers))
+
+    def forecast(self, op, next):
+        op = op[:]
+        op.append(next)
+        opts = self.getOptions(op)
+        return len(opts) > 0
+
