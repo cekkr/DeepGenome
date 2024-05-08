@@ -190,10 +190,29 @@ class Calculator:
                 if next is 'DEFAULT':
                     tensor = self.curOp[1]
                     self.defaults.append(tensor)
-            
+
             case 4:
                 type = self.curOp[pos-2]
 
                 if type is 'Tensor':
                     if next in self.defaults:
                         self.defaultsCalled.append(next)
+
+###
+### Instance agent
+###
+
+calc = Calculator()
+calc.inputs.append((200, 3)) # vision, 1d, with colors
+calc.inputs.append((16,)) # nose, with 16 tonalities
+calc.inputs.append((16,)) # hearing, with 16 frequencies
+calc.inputs.append((3,)) # life status (hunger, energy, health)
+
+calc.outputs.append((1,)) # move forward
+calc.outputs.append((1,)) # rotate (negative for left, positive for right)
+calc.outputs.append((1,)) # eat
+calc.outputs.append((1,)) # grab
+calc.outputs.append((1,)) # blow
+calc.outputs.append((1,)) # kiss
+calc.outputs.append((1,)) # bite
+calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, and the second the amplitude, up to 4 frequencies at the same time)
