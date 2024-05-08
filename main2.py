@@ -52,6 +52,8 @@ class Calculator:
         self.ops = []
         self.curOp = []
 
+        self.vars = {} # vars info
+
         self.tensors = [i for i in range(0, len(self.inputs))]
         self.defaults = []
         self.defaultsCalled = []
@@ -196,6 +198,10 @@ class Calculator:
                     case 'Out':
                         self.outs.append(next)
 
+                var = VarInfo(type, next)
+                self.vars[type+':'+next] = var
+                self.curOpOutVar = var
+
             case 2:
                 if next == 'DEFAULT':
                     tensor = self.curOp[1]
@@ -203,6 +209,8 @@ class Calculator:
 
             case 4:
                 type = self.curOp[pos-2]
+
+                self.curOpOutVar.dependsOn.append(type+':'+next)
 
                 if type == 'Tensor':
                     if next in self.defaults:
@@ -234,6 +242,12 @@ class Calculator:
                 n += 1
 
         print(self.ops)
+
+class VarInfo:
+    def __init__(self, type, number):
+        self.type = type
+        self.number = number
+        self.dependsOn = []
 
 ###
 ### Instance agent
