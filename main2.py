@@ -289,6 +289,86 @@ class Calculator:
         for op in self.ops:
             print(op)
 
+    def optimize(self):
+        ops = []
+
+        dependsOn = []
+        outs = []
+
+        def addDepends(dep):
+            if dep not in dependsOn:
+                dependsOn.append(dep)
+
+        for i in range(0, len(self.ops)):
+            ii = len(self.ops) - i - 1
+            op = self.ops[ii]
+
+            fun = op[2]
+            if fun == 'ASSIGNOUT':
+                if op[1] not in outs:
+                    outs.append(op[1])
+                    addDepends(op[3]+':'+str(op[4]))
+                    ops.append(op)
+            else:
+                out = op[0]+':'+str(op[1])
+                if out in dependsOn:
+                    i = 3
+                    while i < len(op):
+                        if op[i] not in ['NULL', 'INTEGER']: # just to be clear
+                            addDepends(op[i]+':'+str(op[i+1]))
+                        i += 2
+                    ops.append(op)
+
+        # Scale Tensors
+        tensors = []
+        numbers = []
+
+        for dep in dependsOn:
+            spl = dep.split(':')
+            if spl[0] == 'Tensor':
+                tensors.append(int(spl[1]))
+            if spl[0] == 'Number':
+                numbers.append(int(spl[1]))
+
+        tensors.sort()
+        numbers.sort()
+
+        for op in ops:
+            if op[0] == 'Tensor':
+                op[1] = tensors.index(op[1])
+            if op[0] == 'Number':
+                op[1] = numbers.index(op[1])
+
+            i = 3
+            while i < len(op):
+                if op[i] == 'Tensor':
+                    op[i+1] = tensors.index(op[i+1])
+                if op[i] == 'Number':
+                    op[i+1] = numbers.index(op[i+1])
+                i += 2
+
+        self.ops = ops
+        return ops
+
+    def calculateVars(self):
+        self.vars = {}
+
+        def addVar(type, next):
+            var = VarInfo(type, next)
+            self.vars[type + ':' + str(next)] = var
+
+        for op in self.ops:
+            if op[0] in ['Tensor', 'Number', 'Out']:
+                addVar(op[0], op[1])
+
+            i = 3
+            while i < len(op):
+                if op[i] in ['Tensor', 'Number', 'Out']:
+                    addVar(op[i], op[i+1])
+                i += 2
+
+
+
 class VarInfo:
     def __init__(self, type, number):
         self.type = type
@@ -316,4 +396,5 @@ calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, an
 
 # Test random generation
 calc.randomUntilComplete()
+calc.optimize()
 calc.print()
