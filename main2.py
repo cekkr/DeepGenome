@@ -1,7 +1,7 @@
 # This is a new attempt to define an guideline for the development of the DeepGenome
 # Documentation at https://docs.google.com/document/d/1low-DnPADNhektL5gF9kQEo-727Tjeqt21KLjI1mFcM
 import random
-
+import copy
 
 # The Calculator have to execute the DeepDNA and calculate possible options
 class Calculator:
@@ -427,7 +427,24 @@ calc.outputs.append((1,)) # kiss
 calc.outputs.append((1,)) # bite
 calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, and the second the amplitude, up to 4 frequencies at the same time)
 
+dna1 = copy.deepcopy(calc)
+dna2 = copy.deepcopy(calc)
+
 # Test random generation
-calc.randomUntilComplete(10)
-calc.optimize()
-calc.print()
+print("DNA 1")
+dna1.randomUntilComplete(10)
+dna1.optimize()
+dna1.print()
+
+# Second random generation
+print("\nDNA 2")
+dna2.randomUntilComplete(10)
+dna2.optimize()
+dna2.print()
+
+# Merge
+print("\nDNA Child")
+dna1.mergeWith(dna2.ops)
+dna1.randomUntilComplete(10)
+dna1.optimize()
+dna1.print()
