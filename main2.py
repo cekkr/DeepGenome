@@ -46,24 +46,16 @@ class Calculator:
             'MUL': [['Number'], ['Number']],
         }
 
-        self.maxIntegerNumber = 2 # 0, 1, 2
+        self.maxIntegerNumber = 4 # 0, 1, 2, 3, 4
 
     def reset(self):
         self.ops = []
         self.curOp = []
 
-        self.vars = {} # vars info
-
-        self.tensors = [i for i in range(0, len(self.inputs))]
-        for tensor in self.tensors:
-            var = VarInfo('Tensor', tensor)
-            var.dependsOn.append(tensor)
-            self.vars['Tensor:'+str(tensor)] = var
+        self.calculateVars()
 
         self.defaults = []
         self.defaultsCalled = []
-
-        self.numbers = []
 
         self.outs = [i for i in range(0, len(self.outputs))]
         self.assignedOuts = {}
@@ -265,16 +257,22 @@ class Calculator:
 
         print(self.ops)
 
-    def randomUntilComplete(self):
+    def randomUntilComplete(self, noOutUntil=0):
         self.reset()
 
+        num = 0
         while True:
             opts = self.getOptions()
+
+            if len(self.curOp) == 0 and num < noOutUntil and "Out" in opts:
+                opts.remove("Out")
+
             sel = random.choice(opts)
 
             if self.select(sel):
                 self.ops.append(self.curOp)
                 self.curOp = []
+                num += 1
 
                 if self.isComplete():
                     return self.ops
@@ -347,9 +345,22 @@ class Calculator:
     def calculateVars(self):
         self.vars = {}
 
-        def addVar(type, next):
-            var = VarInfo(type, next)
-            self.vars[type + ':' + str(next)] = var
+        self.tensors = [i for i in range(0, len(self.inputs))]
+        for tensor in self.tensors:
+            var = VarInfo('Tensor', tensor)
+            var.dependsOn.append(tensor)
+            self.vars['Tensor:'+str(tensor)] = var
+
+        self.numbers = []
+
+        def addVar(type, number):
+            var = VarInfo(type, number)
+            self.vars[type + ':' + str(number)] = var
+
+            if type == 'Tensor':
+                self.tensors.append(number)
+            if type == 'Number':
+                self.numbers.append(number)
 
         for op in self.ops:
             if op[0] in ['Tensor', 'Number', 'Out']:
@@ -361,6 +372,34 @@ class Calculator:
                     addVar(op[i], op[i+1])
                 i += 2
 
+    def mergeWith(self, ops):
+        res = []
+
+        for op in self.ops:
+            if op[2] != 'ASSIGNOUT':
+                res.append(op)
+
+        def checkOpNumber(type, number):
+            if type == 'Tensor':
+                if number > len(self.inputs):
+                    number += len(self.tensors)
+
+            if type == 'Number':
+                number += len(self.numbers)
+
+            return number
+
+        for op in ops:
+            if op[2] != 'ASSIGNOUT':
+                op[1] = checkOpNumber(op[0], op[1])
+
+                i = 3
+                while i < len(op):
+                    op[i+1] = checkOpNumber(op[i], op[i+1])
+                    i += 2
+
+        self.ops = res
+        return res
 
 
 class VarInfo:
@@ -389,6 +428,6 @@ calc.outputs.append((1,)) # bite
 calc.outputs.append((4, 2)) # speak (the first number indicate the frequency, and the second the amplitude, up to 4 frequencies at the same time)
 
 # Test random generation
-calc.randomUntilComplete()
+calc.randomUntilComplete(10)
 calc.optimize()
 calc.print()
